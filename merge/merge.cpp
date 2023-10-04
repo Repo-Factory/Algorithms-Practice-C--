@@ -60,6 +60,7 @@
 #include <utility>
 
 #define FIRST_ELEMENT(vector) vector[0]
+#define MIDPOINT(vector) vector.size()/2
 #define ONE_LIST 1
 
 void printVector(const std::vector<int>& vect)
@@ -71,60 +72,61 @@ void printVector(const std::vector<int>& vect)
     std::cout << std::endl;
 }
 
+// This procedure mimics our Merge operation
 std::vector<int> mergeLists(const std::vector<int>& firstList, const std::vector<int>& secondList)
 {
     std::vector<int> newList;
-    const int* startLeft =  &FIRST_ELEMENT(firstList);
-    const int* startRight = &FIRST_ELEMENT(secondList);
-    const int* leftEnd =     startLeft+firstList.size();
-    const int* rightEnd =    startRight+secondList.size();
-    const int* leftPtr = startLeft;
-    const int* rightPtr = startRight;
+    size_t leftIndex = 0;
+    size_t rightIndex = 0;
 
-    while (leftPtr < leftEnd || rightPtr < rightEnd)
+    while (leftIndex < firstList.size() && rightIndex < secondList.size())
     {
-        if (leftPtr == leftEnd) {
-            newList.push_back(*rightPtr++);
-            continue;
-        }
-
-        if (rightPtr == rightEnd) {
-            newList.push_back(*leftPtr++);
-            continue;
-        }
-            
-        if (*leftPtr < *rightPtr) {
-            newList.push_back(*leftPtr++);
-        }
-        else {
-            newList.push_back(*rightPtr++);
-        }
+        if (firstList[leftIndex] < secondList[rightIndex]) 
+            newList.push_back(firstList[leftIndex++]);
+        else 
+            newList.push_back(secondList[rightIndex++]);
     }
+
+    while (leftIndex < firstList.size()) 
+        newList.push_back(firstList[leftIndex++]);
+
+    while (rightIndex < secondList.size()) 
+        newList.push_back(secondList[rightIndex++]);
+    
     return newList;
 }
 
 /* 
  * Instead of merging each list in a loop where we only reduce our problem size by t-1, we could reduce our problem size by half 
- * We could do this recursively by merging t/2 lists with the other t/2 lists
+ * We could do this recursively by merging t/2 lists with the other t/2 list
  * Our base case will be when we are merging one list with one list, then we will simply call our merge procedure
  * Otherwise we will recurse our new merge function
  * 
+ * This case will achieve a better run time because we will reduce our problem size in half every time.
+ * So before our merge procedure was shown to need k(n+1) operations
+ * Before we did this procedure t times because every time we did it, our problem size decreased by 1
+ * However, now we have non-recursive work and our recursive work
+ * Our non-recursive work will now be the addition of the size of the two lists which will be cut in half for every recursive level
+ * So if we start with 4 lists of size 6 we will have 24 operations then 12 operations, then 6 operations ...
  * 
+ * If we have t lists of size n we have nt operations then nt/2 operations then nt/4 operations...
+ * This will therefore have ntlogt complexity
  */
 
 std::vector<int> mergeSortedLists(const std::vector<std::vector<int>>& sortedLists) {
     // Split our list in two halves of lists
-    const std::vector<std::vector<int>> sortedListsFirstHalf(sortedLists.begin(), sortedLists.begin() + sortedLists.size()/2);
-    const std::vector<std::vector<int>> sortedListsSecondHalf(sortedLists.begin() + sortedLists.size()/2, sortedLists.end());
+    const std::vector<std::vector<int>> sortedListsFirstHalf (sortedLists.begin(), sortedLists.begin() + MIDPOINT(sortedLists));
+    const std::vector<std::vector<int>> sortedListsSecondHalf(sortedLists.begin() + MIDPOINT(sortedLists), sortedLists.end());
 
     // Base Cases
-    if (sortedLists.size() == ONE_LIST)
+    if (sortedLists.size() == ONE_LIST) // If there's only one list, we simply return that list
         return sortedLists[0];
 
+    // If there are only two lists, we can merge each list using our above procedure
     if (sortedListsFirstHalf.size() == ONE_LIST && sortedListsSecondHalf.size() == ONE_LIST)
         return mergeLists(sortedListsFirstHalf[0], sortedListsSecondHalf[0]);
     
-    // Recursive Case
+    // Recursive Case - Merge the two halves
     return mergeSortedLists(std::vector<std::vector<int>>{mergeSortedLists(sortedListsFirstHalf), mergeSortedLists(sortedListsSecondHalf)});
 }
 
@@ -134,7 +136,7 @@ int main() {
         {1, 3, 5, 7},
         {2, 4, 6, 8},
         {9, 11,30,52},
-        {10,13,16,18}
+        {10,13,16,18},
     };
 
     printVector(mergeLists(sortedLists[0], sortedLists[1]));
